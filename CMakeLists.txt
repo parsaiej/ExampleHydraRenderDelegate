@@ -23,6 +23,8 @@ add_subdirectory(External/VulkanWrappers)
 # --------------------------------------------------
 
 find_package(Vulkan REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLEW   REQUIRED)
 find_package(pxr    REQUIRED)
 
 # Library
@@ -46,5 +48,7 @@ target_include_directories (${PROJECT_NAME} PRIVATE ${PXR_INCLUDE_DIRS})
 # --------------------------------------------------
 
 target_link_libraries (${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
+target_link_libraries (${PROJECT_NAME} PRIVATE OpenGL::GL)
+target_link_libraries (${PROJECT_NAME} PRIVATE GLEW::glew)
 target_link_libraries (${PROJECT_NAME} PRIVATE VulkanWrappers)
 target_link_libraries (${PROJECT_NAME} PRIVATE ${PXR_LIBRARIES})

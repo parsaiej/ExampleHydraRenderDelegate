@@ -1,4 +1,5 @@
 #include "RenderDelegate.h"
+#include "RenderPass.h"
 #include "Mesh.h"
 
 #include <iostream>
@@ -66,7 +67,7 @@ void RenderDelegate::CommitResources(HdChangeTracker *tracker)
 HdRenderPassSharedPtr RenderDelegate::CreateRenderPass(HdRenderIndex *index, HdRprimCollection const& collection)
 {
     std::cout << "Create Custom RenderPass with Collection="  << collection.GetName() << std::endl; 
-    return nullptr; //  HdRenderPassSharedPtr(new HdTinyRenderPass(index, collection));  
+    return HdRenderPassSharedPtr(new RenderPass(index, collection));  
 }
 
 HdRprim* RenderDelegate::CreateRprim(TfToken const& typeId, SdfPath const& rprimId)
