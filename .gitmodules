@@ -1,0 +1,3 @@
+[submodule "External/VulkanWrappers"]
+	path = External/VulkanWrappers
+	url = git@github.com:parsaiej/VulkanWrappers.git
