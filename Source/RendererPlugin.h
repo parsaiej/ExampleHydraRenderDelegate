@@ -11,9 +11,6 @@ public:
     RendererPlugin() = default;
     virtual ~RendererPlugin() = default;
 
-    // Renderer Plugin Interface Implementation
-    // ----------------------------------------------
-
     /// Construct a new render delegate of type HdTinyRenderDelegate.
     virtual HdRenderDelegate *CreateRenderDelegate() override;
 

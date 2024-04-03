@@ -1,4 +1,5 @@
 #include "RendererPlugin.h"
+#include "RenderDelegate.h"
 
 TF_REGISTRY_FUNCTION(TfType)
 {
@@ -8,12 +9,12 @@ TF_REGISTRY_FUNCTION(TfType)
 
 HdRenderDelegate* RendererPlugin::CreateRenderDelegate()
 {
-    return nullptr;
+    return new RenderDelegate();
 }
 
 HdRenderDelegate* RendererPlugin::CreateRenderDelegate(HdRenderSettingsMap const& settingsMap)
 {
-    return nullptr;
+    return new RenderDelegate(settingsMap);
 }
 
 void RendererPlugin::DeleteRenderDelegate(HdRenderDelegate *renderDelegate)

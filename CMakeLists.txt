@@ -30,8 +30,10 @@ find_package(pxr    REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
     "Source/PxrUsage.cpp"
+    "Source/Mesh.cpp"
     "Source/RendererPlugin.cpp"
-    "Source/RenderDelegate.cpp")
+    "Source/RenderDelegate.cpp"
+    "Source/RenderPass.cpp")
 
 # Include
 # --------------------------------------------------

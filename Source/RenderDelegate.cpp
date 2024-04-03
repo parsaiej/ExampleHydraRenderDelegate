@@ -1,4 +1,5 @@
 #include "RenderDelegate.h"
+#include "Mesh.h"
 
 #include <iostream>
 
@@ -27,14 +28,14 @@ RenderDelegate::RenderDelegate(HdRenderSettingsMap const& settingsMap) : HdRende
 
 void RenderDelegate::_Initialize()
 {
-    std::cout << "Creating Tiny RenderDelegate" << std::endl;
+    std::cout << "Creating Custom RenderDelegate" << std::endl;
     _resourceRegistry = std::make_shared<HdResourceRegistry>();
 }
 
 RenderDelegate::~RenderDelegate()
 {
     _resourceRegistry.reset();
-    std::cout << "Destroying Tiny RenderDelegate" << std::endl;
+    std::cout << "Destroying Custom RenderDelegate" << std::endl;
 }
 
 TfTokenVector const& RenderDelegate::GetSupportedRprimTypes() const
@@ -64,20 +65,18 @@ void RenderDelegate::CommitResources(HdChangeTracker *tracker)
 
 HdRenderPassSharedPtr RenderDelegate::CreateRenderPass(HdRenderIndex *index, HdRprimCollection const& collection)
 {
-    std::cout << "Create RenderPass with Collection=" 
-        << collection.GetName() << std::endl; 
-
+    std::cout << "Create Custom RenderPass with Collection="  << collection.GetName() << std::endl; 
     return nullptr; //  HdRenderPassSharedPtr(new HdTinyRenderPass(index, collection));  
 }
 
 HdRprim* RenderDelegate::CreateRprim(TfToken const& typeId, SdfPath const& rprimId)
 {
-    std::cout << "Create Tiny Rprim type=" << typeId.GetText() 
+    std::cout << "Create Custom Rprim type=" << typeId.GetText() 
         << " id=" << rprimId 
         << std::endl;
 
     if (typeId == HdPrimTypeTokens->mesh) {
-        return nullptr; // new HdTinyMesh(rprimId);
+        return new Mesh(rprimId);
     } else {
         TF_CODING_ERROR("Unknown Rprim type=%s id=%s", 
             typeId.GetText(), 
@@ -88,7 +87,7 @@ HdRprim* RenderDelegate::CreateRprim(TfToken const& typeId, SdfPath const& rprim
 
 void RenderDelegate::DestroyRprim(HdRprim *rPrim)
 {
-    std::cout << "Destroy Tiny Rprim id=" << rPrim->GetId() << std::endl;
+    std::cout << "Destroy Custom Rprim id=" << rPrim->GetId() << std::endl;
     delete rPrim;
 }
 
