@@ -7,7 +7,7 @@
                         "bases": [
                             "HdRendererPlugin"
                         ],
-                        "displayName": "Example Renderer",
+                        "displayName": "Manwe Renderer",
                         "priority": 10
                     }
                 }

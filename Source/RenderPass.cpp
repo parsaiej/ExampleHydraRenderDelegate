@@ -18,6 +18,6 @@ void RenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, TfT
     std::cout << "=> Execute RenderPass" << std::endl;
 
     // USD-View will already have a target bound in GL, just clear it for now. 
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 }

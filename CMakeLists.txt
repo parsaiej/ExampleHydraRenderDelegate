@@ -9,13 +9,19 @@ project(${PROJECT_NAME})
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Plugin install path
+set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
+
+# In order for targets to properly load Vulkan libs etc. 
+list(APPEND CMAKE_INSTALL_RPATH "/usr/local/lib")
+
 # User Options
 # --------------------------------------------------
 
 # This will link directly against the custom USD build that ships with the Houdini HDK. 
 # This is required in order for the render delegate to be correctly loaded by houdini,
 # otherwise there will be issues due to loading a plugin that was made with a different version.
-option(BUILD_FOR_HOUDINI "Build for Houdini" ON)
+option(BUILD_FOR_HOUDINI "Build for Houdini" OFF)
 
 # Configure misc. packages
 # --------------------------------------------------
@@ -32,7 +38,7 @@ find_package(Vulkan  REQUIRED)
 find_package(OpenGL  REQUIRED)
 find_package(GLEW    REQUIRED)
 
-if (!BUILD_FOR_HOUDINI)
+if (NOT BUILD_FOR_HOUDINI)
     # Path to a OpenUSD build / installation.
     list( APPEND CMAKE_PREFIX_PATH "~/Development/OpenUSD_Build/" )
 
@@ -67,7 +73,7 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories (${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/External/VulkanWrappers/Include)
 
-if (!BUILD_FOR_HOUDINI)
+if (NOT BUILD_FOR_HOUDINI)
     # Include OpenUSD headers if we aren't building with Houdini HDK framework.
     target_include_directories (${PROJECT_NAME} PRIVATE ${PXR_INCLUDE_DIRS})
 endif()
@@ -80,18 +86,29 @@ target_link_libraries (${PROJECT_NAME} OpenGL::GL)
 target_link_libraries (${PROJECT_NAME} GLEW::glew)
 target_link_libraries (${PROJECT_NAME} VulkanWrappers)
 
-if (!BUILD_FOR_HOUDINI)
+if (NOT BUILD_FOR_HOUDINI)
     # Link against OpenUSD directly. 
     target_link_libraries (${PROJECT_NAME} ${PXR_LIBRARIES})
 else()
+    # Warning: On macOS some recent versions of Houdini 20.x will not correctly link due to a Houdini.framework 
+    # that is missing the necessary symbolic links. 
+
     # Link against HDK (contains SideFX custom USD build) + Library.
     target_link_libraries (${PROJECT_NAME} ${Python_LIBRARIES})
     target_link_libraries (${PROJECT_NAME} Houdini)
-
-    # Warning: Some recent versions of Houdini 20.x will not correctly link due to a Houdini.framework 
-    # that is missing the necessary symbolic links. 
 endif()
 
 # Install
 # --------------------------------------------------
 
+# Move the library + plugin info to a location that USD checks plugins for. 
+# Note: This location should be pointed to by the $PXR_PLUGINPATH_NAME env variable. 
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION .)
+install(FILES ${CMAKE_SOURCE_DIR}/Source/plugInfo.json DESTINATION libExampleHydraRenderDelegate/resources/)
+
+# Standalone Executable Test
+# --------------------------------------------------
+
+if (NOT BUILD_FOR_HOUDINI)
+    add_subdirectory(StandaloneTest/)
+endif()
