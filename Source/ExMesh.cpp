@@ -1,28 +1,28 @@
-#include "Mesh.h"
+#include <ExampleDelegate/ExMesh.h>
 
 #include <iostream>
 
-Mesh::Mesh(SdfPath const& id)
+ExMesh::ExMesh(SdfPath const& id)
     : HdMesh(id)
 {
 }
 
-HdDirtyBits Mesh::GetInitialDirtyBitsMask() const
+HdDirtyBits ExMesh::GetInitialDirtyBitsMask() const
 {
     return HdChangeTracker::Clean | HdChangeTracker::DirtyTransform;
 }
 
-HdDirtyBits Mesh::_PropagateDirtyBits(HdDirtyBits bits) const
+HdDirtyBits ExMesh::_PropagateDirtyBits(HdDirtyBits bits) const
 {
     return bits;
 }
 
-void Mesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirtyBits)
+void ExMesh::_InitRepr(TfToken const &reprToken, HdDirtyBits *dirtyBits)
 {
 
 }
 
-void Mesh::Sync(HdSceneDelegate *sceneDelegate,
+void ExMesh::Sync(HdSceneDelegate *sceneDelegate,
                 HdRenderParam   *renderParam,
                 HdDirtyBits     *dirtyBits,
                 TfToken const   &reprToken)

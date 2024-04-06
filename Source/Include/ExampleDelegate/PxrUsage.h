@@ -13,4 +13,6 @@
 #include <pxr/imaging/hd/resourceRegistry.h>
 #include <pxr/imaging/hd/renderPass.h>
 #include <pxr/imaging/hd/renderPassState.h>
+#include <pxr/imaging/hd/renderBuffer.h>
+#include <pxr/imaging/hd/task.h>
 #include <pxr/imaging/hd/mesh.h>

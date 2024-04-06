@@ -27,7 +27,7 @@ option(BUILD_FOR_HOUDINI "Build for Houdini" OFF)
 # --------------------------------------------------
 
 # Enable a define in the wrappers to enable Vulkan validation layers. 
-add_definitions(-DENABLE_VALIDATION_LAYERS)
+# add_definitions(-DENABLE_VALIDATION_LAYERS)
 
 add_subdirectory(External/VulkanWrappers)
 
@@ -40,7 +40,7 @@ find_package(GLEW    REQUIRED)
 
 if (NOT BUILD_FOR_HOUDINI)
     # Path to a OpenUSD build / installation.
-    list( APPEND CMAKE_PREFIX_PATH "~/Development/OpenUSD_Build/" )
+    list( APPEND CMAKE_PREFIX_PATH "~/Development/OpenUSD_Build_Debug/" )
 
     # Configure a OpenUSD installation. 
     find_package(pxr REQUIRED)
@@ -61,10 +61,11 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED
     "Source/PxrUsage.cpp"
-    "Source/Mesh.cpp"
-    "Source/RendererPlugin.cpp"
-    "Source/RenderDelegate.cpp"
-    "Source/RenderPass.cpp"
+    "Source/ExMesh.cpp"
+    "Source/ExRendererPlugin.cpp"
+    "Source/ExRenderDelegate.cpp"
+    "Source/ExRenderPass.cpp"
+    "Source/ExRenderBuffer.cpp"
 )
 
 # Include
@@ -72,6 +73,7 @@ add_library(${PROJECT_NAME} SHARED
 
 target_include_directories (${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/External/VulkanWrappers/Include)
+target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Include)
 
 if (NOT BUILD_FOR_HOUDINI)
     # Include OpenUSD headers if we aren't building with Houdini HDK framework.

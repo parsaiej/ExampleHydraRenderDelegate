@@ -24,13 +24,13 @@ PXR_NAMESPACE_USING_DIRECTIVE
 /// can do the heavy work of releasing state (such as handles into the top-level
 /// scene), so that object population and existence aren't tied to each other.
 ///
-class Mesh final : public HdMesh 
+class ExMesh final : public HdMesh 
 {
 public:
     HF_MALLOC_TAG_NEW("new Mesh");
 
-    Mesh(SdfPath const& id);
-    ~Mesh() override = default;
+    ExMesh(SdfPath const& id);
+    ~ExMesh() override = default;
 
     /// Inform the scene graph which state needs to be downloaded in the
     /// first Sync() call: in this case, topology and points data to build

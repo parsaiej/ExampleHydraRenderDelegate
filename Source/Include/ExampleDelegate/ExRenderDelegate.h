@@ -5,18 +5,28 @@
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
-class RenderDelegate final : public HdRenderDelegate
+namespace VulkanWrappers
+{
+    class Device;
+}
+
+class ExRenderDelegate final : public HdRenderDelegate
 {
 public:
 
-    /// Render delegate constructor. 
-    RenderDelegate();
+    // Render Delegate Implementation
+    // ----------------------------------
 
     /// Render delegate constructor. 
-    RenderDelegate(HdRenderSettingsMap const& settingsMap);
+    ExRenderDelegate();
+
+    /// Render delegate constructor. 
+    ExRenderDelegate(HdRenderSettingsMap const& settingsMap);
 
     /// Render delegate destructor.
-    virtual ~RenderDelegate();
+    virtual ~ExRenderDelegate();
+
+    void SetDrivers(HdDriverVector const& drivers) override;
 
     /// Supported types
     const TfTokenVector &GetSupportedRprimTypes() const override;
@@ -47,6 +57,12 @@ public:
 
     HdRenderParam *GetRenderParam() const override;
 
+    // Utility
+    // ---------------------------
+
+    inline VulkanWrappers::Device* GetGraphicsDevice() { return m_GraphicsDevice; }
+    
+
 private:
 
     static const TfTokenVector SUPPORTED_RPRIM_TYPES;
@@ -54,6 +70,8 @@ private:
     static const TfTokenVector SUPPORTED_BPRIM_TYPES;
 
     void _Initialize();
+
+    VulkanWrappers::Device* m_GraphicsDevice;
 
     HdResourceRegistrySharedPtr _resourceRegistry;
 };
