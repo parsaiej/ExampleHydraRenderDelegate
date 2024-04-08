@@ -4,6 +4,8 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+        // Test the standalone executable.
         {
             "type": "lldb",
             "request": "launch",
@@ -12,6 +14,24 @@
             "cwd": "${workspaceFolder}/build/StandaloneTest/",
             "env": {
                 "PXR_PLUGINPATH_NAME": "/Users/johnparsaie/Development/custom_usd_plugins"
+            }
+        },
+
+        // Test USDView via Python.
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "USDView",
+            "program": "python3.9",
+            "cwd": "${workspaceFolder}/../OpenUSD_Build/bin/",
+
+            "args": ["usdview", "${workspaceFolder}/../../Downloads/Kitchen_set/Kitchen_set.usd"],
+
+            "env": 
+            {
+                // Need to manually supply the environment...
+                "PXR_PLUGINPATH_NAME": "/Users/johnparsaie/Development/custom_usd_plugins",
+                "PYTHONPATH": "$PYTHONPATH:/Users/johnparsaie/Development/OpenUSD_Build/lib/python"
             }
         }
     ]

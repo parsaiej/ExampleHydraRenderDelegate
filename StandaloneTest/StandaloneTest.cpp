@@ -4,6 +4,7 @@
 #include <VulkanWrappers/Shader.h>
 #include <VulkanWrappers/Buffer.h>
 
+#include <iostream>
 #include <memory>
 #include <unordered_map>
 
@@ -92,8 +93,15 @@ int main(int argc, char **argv, char **envp)
 
     HdxTaskController taskController(renderIndex, SdfPath("/taskController"));
     {
-        // Default task params.
-        taskController.SetRenderParams(HdxRenderTaskParams());
+        auto params = HdxRenderTaskParams();
+        {
+            params.viewport = GfVec4i(0, 0, 800, 600);
+        }
+
+        // The "Task Controller" will automatically configure an HdxRenderTask
+        // (which will create and invoke our delegate's renderpass).
+        taskController.SetRenderParams(params);
+        taskController.SetRenderViewport({ 0, 0, 800, 600 });
     }
 
     // Initialize the Hydra engine. 
@@ -110,7 +118,9 @@ int main(int argc, char **argv, char **envp)
     while (window.NextFrame(&device, &frame))
     {
         // Forward the current backbuffer and commandbuffer to the delegate. 
-        // This feels quite hacky, but the Hydra API is so overtly convoluted that I really just dont care. 
+        // This feels quite hacky, open to suggestions. 
+        // There might be a simpler way to manage this by writing my own HdTask, but
+        // it would require sacrificing the simplicity that HdxTaskController offers.
         renderDelegate->SetRenderSetting(TfToken("CurrentFrame"), VtValue(&frame));
 
         // Invoke Hydra!

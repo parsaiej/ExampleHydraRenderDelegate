@@ -15,6 +15,9 @@ set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
 # In order for targets to properly load Vulkan libs etc. 
 list(APPEND CMAKE_INSTALL_RPATH "/usr/local/lib")
 
+# Set RPATH for all targets in the project
+list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
+
 # User Options
 # --------------------------------------------------
 
@@ -27,7 +30,7 @@ option(BUILD_FOR_HOUDINI "Build for Houdini" OFF)
 # --------------------------------------------------
 
 # Enable a define in the wrappers to enable Vulkan validation layers. 
-# add_definitions(-DENABLE_VALIDATION_LAYERS)
+add_definitions(-DENABLE_VALIDATION_LAYERS)
 
 add_subdirectory(External/VulkanWrappers)
 
@@ -90,6 +93,7 @@ target_link_libraries (${PROJECT_NAME} VulkanWrappers)
 
 if (NOT BUILD_FOR_HOUDINI)
     # Link against OpenUSD directly. 
+    target_link_libraries (${PROJECT_NAME} ${Python_LIBRARIES})
     target_link_libraries (${PROJECT_NAME} ${PXR_LIBRARIES})
 else()
     # Warning: On macOS some recent versions of Houdini 20.x will not correctly link due to a Houdini.framework 
@@ -100,12 +104,14 @@ else()
     target_link_libraries (${PROJECT_NAME} Houdini)
 endif()
 
-# Install
+# Install Config
 # --------------------------------------------------
 
 # Move the library + plugin info to a location that USD checks plugins for. 
 # Note: This location should be pointed to by the $PXR_PLUGINPATH_NAME env variable. 
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION .)
+install(TARGETS VulkanWrappers  LIBRARY DESTINATION .)
+install(TARGETS MetalUtility    LIBRARY DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/Source/plugInfo.json DESTINATION libExampleHydraRenderDelegate/resources/)
 
 # Standalone Executable Test
