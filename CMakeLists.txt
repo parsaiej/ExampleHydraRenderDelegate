@@ -24,7 +24,7 @@ list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
 # This will link directly against the custom USD build that ships with the Houdini HDK. 
 # This is required in order for the render delegate to be correctly loaded by houdini,
 # otherwise there will be issues due to loading a plugin that was made with a different version.
-option(BUILD_FOR_HOUDINI "Build for Houdini" OFF)
+option(BUILD_FOR_HOUDINI "Build for Houdini" ON)
 
 # Configure misc. packages
 # --------------------------------------------------
@@ -64,6 +64,7 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED
     "Source/PxrUsage.cpp"
+    "Source/StbUsage.cpp"
     "Source/ExMesh.cpp"
     "Source/ExRendererPlugin.cpp"
     "Source/ExRenderDelegate.cpp"
@@ -77,6 +78,7 @@ add_library(${PROJECT_NAME} SHARED
 target_include_directories (${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/External/VulkanWrappers/Include)
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Include)
+target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/External/)
 
 if (NOT BUILD_FOR_HOUDINI)
     # Include OpenUSD headers if we aren't building with Houdini HDK framework.
@@ -93,7 +95,6 @@ target_link_libraries (${PROJECT_NAME} VulkanWrappers)
 
 if (NOT BUILD_FOR_HOUDINI)
     # Link against OpenUSD directly. 
-    target_link_libraries (${PROJECT_NAME} ${Python_LIBRARIES})
     target_link_libraries (${PROJECT_NAME} ${PXR_LIBRARIES})
 else()
     # Warning: On macOS some recent versions of Houdini 20.x will not correctly link due to a Houdini.framework 

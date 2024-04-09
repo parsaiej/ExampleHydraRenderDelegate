@@ -1,3 +1,6 @@
+#ifndef PXR_USAGE
+#define PXR_USAGE
+
 #ifdef __APPLE__
     // MacOS fix for bug inside USD. 
     #define unary_function __unary_function
@@ -16,3 +19,5 @@
 #include <pxr/imaging/hd/renderBuffer.h>
 #include <pxr/imaging/hd/task.h>
 #include <pxr/imaging/hd/mesh.h>
+
+#endif

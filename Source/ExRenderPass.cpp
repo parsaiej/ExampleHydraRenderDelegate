@@ -1,10 +1,12 @@
 #include <ExampleDelegate/ExRenderPass.h>
 #include <ExampleDelegate/ExRenderDelegate.h>
+#include <ExampleDelegate/StbUsage.h>
 
 #include <VulkanWrappers/Device.h>
 #include <VulkanWrappers/Window.h>
 #include <VulkanWrappers/Image.h>
 #include <VulkanWrappers/Shader.h>
+#include <VulkanWrappers/Buffer.h>
 using namespace VulkanWrappers;
 
 #include <pxr/usd/ar/defaultResolver.h>
@@ -32,16 +34,49 @@ enum ImageID
     DEPTH
 };
 
+enum BufferID
+{
+    COLOR_MAP_STAGING,
+};
+
 // Resources
 // ---------------------
 
 static VkCommandBuffer s_InternalCmd;
+static VkViewport      s_PreviousViewport;
 
 static std::unordered_map<ShaderID, Shader> s_Shaders;
 static std::unordered_map<ImageID,  Image>  s_Images;
+static std::unordered_map<BufferID, Buffer> s_Buffers;
 
 static unsigned int s_GLBackbufferImage;
 static unsigned int s_GLBackbufferObject;
+
+void CreateViewportSizedResources(Device* device, VkViewport viewport)
+{
+    VkFormat colorFormat;
+    {
+        if (device->GetWindow() != nullptr)
+            colorFormat = device->GetWindow()->GetColorSurfaceFormat();
+        else
+            colorFormat = VK_FORMAT_R8G8B8A8_SRGB;
+    }
+
+    s_Images[ImageID::COLOR] = Image(viewport.width, viewport.height, 
+                                    colorFormat, 
+                                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
+                                    VK_IMAGE_ASPECT_COLOR_BIT);
+
+    s_Buffers[BufferID::COLOR_MAP_STAGING] = Buffer(4 * viewport.width * viewport.height, 
+                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, 
+                                    VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT);
+
+    for (auto& image : s_Images)
+        device->CreateImages( { &image.second } );
+
+    for (auto& buffer : s_Buffers)
+        device->CreateBuffers( { &buffer.second } );
+}
 
 ExRenderPass::ExRenderPass(HdRenderIndex *index, HdRprimCollection const &collection, ExRenderDelegate* renderDelegate) 
     : HdRenderPass(index, collection), m_Owner(renderDelegate)
@@ -61,50 +96,9 @@ ExRenderPass::ExRenderPass(HdRenderIndex *index, HdRprimCollection const &collec
     for (auto& shader : s_Shaders)
         device->CreateShaders ({ &shader.second });
 
-    VkFormat colorFormat;
-    {
-        if (device->GetWindow() != nullptr)
-            colorFormat = device->GetWindow()->GetColorSurfaceFormat();
-        else
-            colorFormat = VK_FORMAT_R8G8B8A8_SRGB;
-    }
-
-    s_Images = 
-    {
-        { ImageID::COLOR, Image(1196, 756, colorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_ASPECT_COLOR_BIT) },
-        { ImageID::DEPTH, Image(800, 600, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT) }
-    };
-
-    // Need to enable mapping in case we don't own the backbuffer.
-    s_Images[ImageID::COLOR].SetMappingEnabled(m_Owner->RequiresManualQueueSubmit());
-
-    for (auto& image : s_Images)
-        device->CreateImages( { &image.second } );
-
     // The internal command should be secondary since there already exist a primary one to be used for application-managed queue submission.
     if (m_Owner->RequiresManualQueueSubmit())
         device->CreateCommandBuffer(&s_InternalCmd);
-
-    // Create necesarry backbuffers if needed 
-    if (m_Owner->RequiresManualQueueSubmit())
-    {
-        glewInit();
-
-        GLint currentFBO = 0;
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);
-
-        char imageData[1196 * 756 * 4];
-        glGenTextures(1, &s_GLBackbufferImage);
-        glBindTexture(GL_TEXTURE_2D, s_GLBackbufferImage);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1196, 756, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
-
-        glGenFramebuffers(1, &s_GLBackbufferObject);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, s_GLBackbufferObject);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, s_GLBackbufferImage, 0);
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, currentFBO);
-        glBindTexture(GL_TEXTURE_2D, currentFBO);
-    }
 }
 
 ExRenderPass::~ExRenderPass() 
@@ -118,6 +112,9 @@ ExRenderPass::~ExRenderPass()
 
     for (auto& image : s_Images)
         device->ReleaseImages ({ &image.second });
+
+    for (auto& buffer : s_Buffers)
+        device->ReleaseBuffers ({ &buffer.second });
 }
 
 static void GetViewportScissor(HdRenderPassStateSharedPtr const& renderPassState, VkRect2D* scissor, VkViewport* viewport)
@@ -134,6 +131,15 @@ static void GetViewportScissor(HdRenderPassStateSharedPtr const& renderPassState
         // the new camera framing API.
         const GfVec4f vp = renderPassState->GetViewport();
         dataWindow = GfRect2i(GfVec2i(0), int(vp[2]), int(vp[3]));        
+    }
+
+    if (dataWindow.GetWidth() <= 1 && dataWindow.GetHeight() <= 1)
+    {
+        struct { GLint x, y, w, h; } viewport;
+        glGetIntegerv(GL_VIEWPORT, (GLint*)&viewport);
+        
+        // Final attempt if the viewport is still invalid, fetch it from GL (necesarry for Houdini).
+        dataWindow = GfRect2i(GfVec2i(0), int(viewport.w), int(viewport.h));
     }
 
     *viewport =
@@ -156,7 +162,7 @@ static void GetViewportScissor(HdRenderPassStateSharedPtr const& renderPassState
 }
 
 void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, TfTokenVector const &renderTags)
-{
+{   
     // Grab a handle to the device. 
     Device* device = m_Owner->GetGraphicsDevice();
 
@@ -166,6 +172,38 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
     VkRect2D   currentScissor;
     VkViewport currentViewport;
     GetViewportScissor(renderPassState, &currentScissor, &currentViewport);
+
+    if (s_PreviousViewport.width  != currentViewport.width ||
+        s_PreviousViewport.height != currentViewport.height)
+    {
+        CreateViewportSizedResources(device, currentViewport);
+        s_PreviousViewport = currentViewport;
+    }
+
+    // Create necesarry backbuffers if needed 
+    static bool bCreatedGLObjects = false;
+
+    if (m_Owner->RequiresManualQueueSubmit() && !bCreatedGLObjects)
+    {
+        glewInit();
+
+        GLint currentFramebuffer;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFramebuffer);
+
+        std::vector<uint8_t> imageData(4 * currentViewport.width * currentViewport.height);
+        glGenTextures(1, &s_GLBackbufferImage);
+        glBindTexture(GL_TEXTURE_2D, s_GLBackbufferImage);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, currentViewport.width, currentViewport.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData.data());
+
+        glGenFramebuffers(1, &s_GLBackbufferObject);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, s_GLBackbufferObject);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, s_GLBackbufferImage, 0);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, currentFramebuffer);
+        glBindTexture(GL_TEXTURE_2D, currentFramebuffer);
+
+        bCreatedGLObjects = true;
+    }
 
     VkCommandBuffer cmd;
     {
@@ -206,7 +244,7 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
         .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue.color = { 0, 1, 0, 1 }
+        .clearValue.color = { 0, 0, 0, 1 }
     };
 
     VkRenderingInfoKHR renderInfo
@@ -239,6 +277,13 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
     // Conclude internal command buffer recording.
     if (m_Owner->RequiresManualQueueSubmit())
     {
+        // Prepare internal color target for copy.
+        Image::TransferWriteToSource(cmd, s_Images[ImageID::COLOR].GetData()->image);
+
+        // Transfer the internal color target to staging buffer memory that will be mapped after the command is executed.
+        Buffer::CopyImage(cmd, &s_Images[ImageID::COLOR], &s_Buffers[BufferID::COLOR_MAP_STAGING]);
+
+        // Conclude internal command rendering.
         vkEndCommandBuffer(cmd);
         
         VkSubmitInfo submitInfo
@@ -251,22 +296,22 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
         // Submit the the internal command to graphics queue.
         vkQueueSubmit(device->GetGraphicsQueue(), 1u, &submitInfo, nullptr);
 
-        // Wait until work is done.
+        // Wait until the work is done.
         vkDeviceWaitIdle(device->GetLogical());
 
         // Currently Hydra does not really make it easy to share memory on the device-side.
         // So we need to have a round trip copy via the CPU to the current GL backbuffer.
 
-        /*
-        void* pColorData;
-        vmaMapMemory(device->GetAllocator(), s_Images[ImageID::COLOR].GetData()->allocation, &pColorData);
+        VmaAllocationInfo allocInfo;
+        vmaGetAllocationInfo(device->GetAllocator(), s_Buffers[BufferID::COLOR_MAP_STAGING].GetData()->allocation, &allocInfo);
 
+        auto mappedData = std::vector<uint8_t>(allocInfo.size);
+        vmaCopyAllocationToMemory(device->GetAllocator(), s_Buffers[BufferID::COLOR_MAP_STAGING].GetData()->allocation, 0u, mappedData.data(), allocInfo.size);
+
+    #if 0
         // Copy the mapped data into the internal backbuffer image data. 
-        glBindTexture(GL_TEXTURE_2D, s_GLBackbufferImage);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, currentViewport.width, currentViewport.height, 0, GL_RGBA8, GL_UNSIGNED_INT, pColorData);
-
-        vmaUnmapMemory(device->GetAllocator(), s_Images[ImageID::COLOR].GetData()->allocation);
-        */
+        WritePNG("/Users/johnparsaie/Development/test.png", currentViewport.width, currentViewport.height, 4u, mappedData.data(), 4u);
+    #endif
 
         GLint currentFramebuffer;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFramebuffer);
@@ -274,14 +319,9 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
         // Bind our internal FBO for write.
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, s_GLBackbufferObject);
 
-        void* pColorData;
-        vmaMapMemory(device->GetAllocator(), s_Images[ImageID::COLOR].GetData()->allocation, &pColorData);
-
         // Copy the mapped data into the internal backbuffer image data. 
         glBindTexture(GL_TEXTURE_2D, s_GLBackbufferImage);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, currentViewport.width, currentViewport.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pColorData);
-
-        vmaUnmapMemory(device->GetAllocator(), s_Images[ImageID::COLOR].GetData()->allocation);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, currentViewport.width, currentViewport.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, mappedData.data());
 
         // Blit the internal backbuffer into the host one.
         glBindFramebuffer(GL_READ_FRAMEBUFFER, s_GLBackbufferObject);
@@ -291,7 +331,7 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
                           0, 0, currentViewport.width, currentViewport.height, 
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, currentFramebuffer);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, currentFramebuffer);
     }
     else
     {

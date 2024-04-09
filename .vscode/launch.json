@@ -33,6 +33,14 @@
                 "PXR_PLUGINPATH_NAME": "/Users/johnparsaie/Development/custom_usd_plugins",
                 "PYTHONPATH": "$PYTHONPATH:/Users/johnparsaie/Development/OpenUSD_Build/lib/python"
             }
+        },
+
+        // Test Houdini
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Houdini",
+            "program": "/Applications/Houdini/Current/Houdini FX 20.0.506.app",
         }
     ]
 }
