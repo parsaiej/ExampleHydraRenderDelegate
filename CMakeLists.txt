@@ -11,8 +11,13 @@ set (CMAKE_CXX_STANDARD 17)
 # Plugin install path
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
 
-# In order for targets to properly load Vulkan libs etc. 
-list(APPEND CMAKE_INSTALL_RPATH "/usr/local/lib")
+if (APPLE)
+    # In order for targets to properly load Vulkan libs etc. 
+    list(APPEND CMAKE_INSTALL_RPATH "/usr/local/lib")
+else()
+    add_compile_definitions(NOMINMAX)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 # Set RPATH for all targets in the project
 list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
@@ -89,6 +94,9 @@ endif()
 
 # Install Config
 # --------------------------------------------------
+
+# Plugin install path
+set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
 
 # Move the library + plugin info to a location that USD checks plugins for. 
 # Note: This location should be pointed to by the $PXR_PLUGINPATH_NAME env variable. 
