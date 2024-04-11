@@ -83,8 +83,6 @@ ExRenderPass::ExRenderPass(HdRenderIndex *index, HdRprimCollection const &collec
 {
     auto device = m_Owner->GetGraphicsDevice();
 
-    PlugRegistry::GetInstance().RegisterPlugins()
-
     // Fetch the base plugin in order to construct asset paths.
     auto pluginBase = PlugRegistry::GetInstance().GetPluginWithName("hdExample");
     TF_VERIFY(pluginBase != nullptr);
