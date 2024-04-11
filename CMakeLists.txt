@@ -29,7 +29,7 @@ list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
 # This will link directly against the custom USD build that ships with the Houdini HDK. 
 # This is required in order for the render delegate to be correctly loaded by houdini,
 # otherwise there will be issues due to loading a plugin that was made with a different version.
-option(BUILD_FOR_HOUDINI "Build for Houdini" ON)
+option(BUILD_FOR_HOUDINI "Build for Houdini" OFF)
 
 # Configure misc. packages
 # --------------------------------------------------
@@ -112,6 +112,9 @@ endif()
 
 # Install Config
 # --------------------------------------------------
+
+# Plugin install path
+set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
 
 # Move the library + plugin info to a location that USD checks plugins for. 
 # Note: This location should be pointed to by the $PXR_PLUGINPATH_NAME env variable. 

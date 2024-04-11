@@ -267,7 +267,21 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
     // Configure render state
     Device::SetDefaultRenderState(cmd);
 
-    Device::vkCmdSetViewportWithCountEXT(cmd, 1u, &currentViewport);
+    if (m_Owner->RequiresManualQueueSubmit())
+    {
+        VkViewport flippedViewport = currentViewport;
+        {
+            flippedViewport.height = -currentViewport.height;
+            flippedViewport.y = currentViewport.height;
+        }
+
+        Device::vkCmdSetViewportWithCountEXT(cmd, 1u, &flippedViewport);
+        Device::vkCmdSetFrontFaceEXT(cmd, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    }
+    else
+        Device::vkCmdSetViewportWithCountEXT(cmd, 1u, &currentViewport);
+
+
     Device::vkCmdSetScissorWithCountEXT(cmd, 1u,  &currentScissor);
 
     vkCmdDraw(cmd, 3u, 1u, 0u, 0u);

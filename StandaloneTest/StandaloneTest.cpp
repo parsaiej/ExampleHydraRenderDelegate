@@ -40,7 +40,7 @@ using namespace VulkanWrappers;
 int main(int argc, char **argv, char **envp)
 { 
     // Create window. 
-    Window window("Sample", 800, 600);
+    Window window("Standalone Vulkan Hydra Executable", 800, 600);
 
     // Initialize graphics device usage with the window. 
     Device device(&window);
