@@ -1,3 +1,6 @@
 [submodule "External/stb"]
 	path = External/stb
 	url = git@github.com:nothings/stb.git
+[submodule "External/NRI"]
+	path = External/NRI
+	url = git@github.com:parsaiej/NRI.git

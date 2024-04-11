@@ -1,9 +1,3 @@
-#include <VulkanWrappers/Device.h>
-#include <VulkanWrappers/Window.h>
-#include <VulkanWrappers/Image.h>
-#include <VulkanWrappers/Shader.h>
-#include <VulkanWrappers/Buffer.h>
-
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -32,19 +26,11 @@
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
-using namespace VulkanWrappers;
-
 // Implementation
 // ---------------------
 
 int main(int argc, char **argv, char **envp)
 { 
-    // Create window. 
-    Window window("Standalone Vulkan Hydra Executable", 800, 600);
-
-    // Initialize graphics device usage with the window. 
-    Device device(&window);
-
     // Load Render Plugin
     // ---------------------
 
@@ -63,7 +49,7 @@ int main(int argc, char **argv, char **envp)
     // We could use the OpenUSD Hydra "HGI" here but for learning purposes I would rather use a from-scratch implementation.
     // ---------------------
 
-    HdDriver customDriver{TfToken("CustomVulkanDevice"), VtValue(&device)};
+    HdDriver customDriver{TfToken("CustomVulkanDevice"), VtValue(nullptr)};
     
     // Create render index from the delegate. 
     // ---------------------
@@ -112,23 +98,6 @@ int main(int argc, char **argv, char **envp)
     // Render-loop
     // ---------------------
 
-    // Handle to current frame to write commands to. 
-    Frame frame;
-
-    while (window.NextFrame(&device, &frame))
-    {
-        // Forward the current backbuffer and commandbuffer to the delegate. 
-        // This feels quite hacky, open to suggestions. 
-        // There might be a simpler way to manage this by writing my own HdTask, but
-        // it would require sacrificing the simplicity that HdxTaskController offers.
-        renderDelegate->SetRenderSetting(TfToken("CurrentFrame"), VtValue(&frame));
-
-        // Invoke Hydra!
-        auto renderTasks = taskController.GetRenderingTasks();
-        engine.Execute(renderIndex, &renderTasks);
-
-        window.SubmitFrame(&device, &frame);
-    }
 
     return 0;
 }

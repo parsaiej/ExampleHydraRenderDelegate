@@ -6,7 +6,7 @@ project(${PROJECT_NAME})
 # Project Config
 # --------------------------------------------------
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 20)
 
 # Plugin install path
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
@@ -47,6 +47,11 @@ else()
     # Info: https://www.sidefx.com/docs/hdk/_h_d_k__intro__compiling.html
     find_package(Houdini REQUIRED)
 endif()
+
+# Configure local dependencies
+# --------------------------------------------------
+
+add_subdirectory(External/NRI)
 
 # Library
 # --------------------------------------------------
@@ -107,5 +112,5 @@ install(FILES ${CMAKE_SOURCE_DIR}/Source/plugInfo.json DESTINATION libExampleHyd
 # --------------------------------------------------
 
 if (NOT BUILD_FOR_HOUDINI)
-    # add_subdirectory(StandaloneTest/)
+    add_subdirectory(StandaloneTest/)
 endif()
