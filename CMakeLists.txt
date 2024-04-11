@@ -9,8 +9,16 @@ project(${PROJECT_NAME})
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED True)
 
-# In order for targets to properly load Vulkan libs etc. 
-list(APPEND CMAKE_INSTALL_RPATH "/usr/local/lib")
+# Plugin install path
+set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
+
+if (APPLE)
+    # In order for targets to properly load Vulkan libs etc. 
+    list(APPEND CMAKE_INSTALL_RPATH "/usr/local/lib")
+else()
+    add_compile_definitions(NOMINMAX)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 # Set RPATH for all targets in the project
 list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
@@ -112,8 +120,10 @@ set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
 # Note: This location should be pointed to by the $PXR_PLUGINPATH_NAME env variable. 
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION .)
 install(TARGETS VulkanWrappers  LIBRARY DESTINATION .)
-install(TARGETS MetalUtility    LIBRARY DESTINATION .)
-install(FILES ${CMAKE_SOURCE_DIR}/Source/plugInfo.json DESTINATION libExampleHydraRenderDelegate/resources/)
+if (APPLE)
+    install(TARGETS MetalUtility    LIBRARY DESTINATION .)
+endif()
+install(FILES ${CMAKE_SOURCE_DIR}/Source/plugInfo.json DESTINATION ExampleHydraRenderDelegate/resources/)
 
 # Standalone Executable Test
 # --------------------------------------------------
