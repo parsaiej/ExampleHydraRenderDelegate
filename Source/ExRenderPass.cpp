@@ -141,24 +141,20 @@ static void GetViewportScissor(HdRenderPassStateSharedPtr const& renderPassState
         // Final attempt if the viewport is still invalid, fetch it from GL (necesarry for Houdini).
         dataWindow = GfRect2i(GfVec2i(0), int(viewport.w), int(viewport.h));
     }
+    
+    viewport->x = 0.0;
+    viewport->y = 0.0;
+    viewport->width  = (float)dataWindow.GetWidth();
+    viewport->height = (float)dataWindow.GetHeight();
+    viewport->minDepth = 0.0;
+    viewport->maxDepth = 1.0;
 
-    *viewport =
-    {
-        .x = 0.0,
-        .y = 0.0,
-        .width  = (float)dataWindow.GetWidth(),
-        .height = (float)dataWindow.GetHeight(),
-        .minDepth = 0.0,
-        .maxDepth = 1.0
-    };
-
-    *scissor  = 
-    {
-        .offset.x = 0,
-        .offset.y = 0,
-        .extent.width  = (uint32_t)dataWindow.GetWidth(),
-        .extent.height = (uint32_t)dataWindow.GetHeight()
-    };
+    
+    scissor->offset.x = 0;
+    scissor->offset.y = 0;
+    scissor->extent.width  = (uint32_t)dataWindow.GetWidth();
+    scissor->extent.height = (uint32_t)dataWindow.GetHeight();
+    
 }
 
 void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, TfTokenVector const &renderTags)
@@ -215,13 +211,12 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
             vkResetCommandBuffer(s_InternalCmd, 0x0);
 
             // Enable the command buffer into a recording state. 
-            VkCommandBufferBeginInfo commandBegin
-            {
-                .sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                .flags            = 0,
-                .pInheritanceInfo = nullptr
-            };
+            VkCommandBufferBeginInfo commandBegin = {};
             
+            commandBegin.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            commandBegin.flags            = 0;
+            commandBegin.pInheritanceInfo = nullptr;
+                        
             vkBeginCommandBuffer(s_InternalCmd, &commandBegin);
 
             cmd = s_InternalCmd;
@@ -237,26 +232,24 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
 
     Image::TransferUnknownToWrite(cmd, s_Images[ImageID::COLOR].GetData()->image);
 
-    VkRenderingAttachmentInfoKHR colorAttachment
-    {
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-        .imageView   = s_Images[ImageID::COLOR].GetData()->view,
-        .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue.color = { 0, 0, 0, 1 }
-    };
+    VkRenderingAttachmentInfoKHR colorAttachment = {};
+    colorAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+    colorAttachment.imageView   = s_Images[ImageID::COLOR].GetData()->view;
+    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.clearValue.color = { 0, 0, 0, 1 };
 
-    VkRenderingInfoKHR renderInfo
-    {
-        .sType                = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-        .renderArea           = currentScissor,
-        .layerCount           = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments    = &colorAttachment,
-        .pDepthAttachment     = nullptr,
-        .pStencilAttachment   = nullptr
-    };
+
+    VkRenderingInfoKHR renderInfo = {};
+    renderInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    renderInfo.renderArea           = currentScissor;
+    renderInfo.layerCount           = 1;
+    renderInfo.colorAttachmentCount = 1;
+    renderInfo.pColorAttachments    = &colorAttachment;
+    renderInfo.pDepthAttachment     = nullptr;
+    renderInfo.pStencilAttachment   = nullptr;
+
 
     // Write commands for this frame. 
     Device::vkCmdBeginRenderingKHR(cmd, &renderInfo);
@@ -300,12 +293,11 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
         // Conclude internal command rendering.
         vkEndCommandBuffer(cmd);
         
-        VkSubmitInfo submitInfo
-        {
-            .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .commandBufferCount   = 1u,
-            .pCommandBuffers      = &cmd,
-        };
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount   = 1u;
+        submitInfo.pCommandBuffers      = &cmd;
+        
 
         // Submit the the internal command to graphics queue.
         vkQueueSubmit(device->GetGraphicsQueue(), 1u, &submitInfo, nullptr);
@@ -354,17 +346,15 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
         Image::TransferWriteToSource(cmd, s_Images[ImageID::COLOR].GetData()->image);
         Image::TransferUnknownToDestination(cmd, frame->backBuffer);
 
-        VkImageCopy copyRegion =
-        {
-            .srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .srcSubresource.layerCount = 1,
-            .dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .dstSubresource.layerCount = 1,
-            .extent.width              = (uint32_t)currentScissor.extent.width,
-            .extent.height             = (uint32_t)currentScissor.extent.height,
-            .extent.depth              = 1
-        };
-
+        VkImageCopy copyRegion = {};
+        copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.srcSubresource.layerCount = 1;
+        copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.dstSubresource.layerCount = 1;
+        copyRegion.extent.width              = (uint32_t)currentScissor.extent.width;
+        copyRegion.extent.height             = (uint32_t)currentScissor.extent.height;
+        copyRegion.extent.depth              = 1;
+        
         // Else just copy the color target into the frame-provided backbuffer.
         vkCmdCopyImage(cmd, 
                     s_Images[ImageID::COLOR].GetData()->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
