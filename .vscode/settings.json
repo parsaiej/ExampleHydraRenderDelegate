@@ -1,8 +1,4 @@
 {
-    "cmake.configureSettings": 
-    { 
-        "OPT_BUILD_FOR_HOUDINI": "ON",
-    },
     "files.associations": {
         "__threading_support": "cpp",
         "span": "cpp",
@@ -13,5 +9,6 @@
         "string_view": "cpp",
         "vector": "cpp",
         "__config": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true
 }

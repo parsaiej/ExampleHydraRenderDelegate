@@ -7,7 +7,6 @@ project(${PROJECT_NAME})
 # --------------------------------------------------
 
 set (CMAKE_CXX_STANDARD 17)
-set (CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Plugin install path
 set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
@@ -24,27 +23,12 @@ list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
 # This will link directly against the custom USD build that ships with the Houdini HDK. 
 # This is required in order for the render delegate to be correctly loaded by houdini,
 # otherwise there will be issues due to loading a plugin that was made with a different version.
-option(BUILD_FOR_HOUDINI "Build for Houdini" ON)
-
-# Configure misc. packages
-# --------------------------------------------------
-
-# Enable a define in the wrappers to enable Vulkan validation layers. 
-add_definitions(-DENABLE_VALIDATION_LAYERS)
-
-add_subdirectory(External/VulkanWrappers)
+option(BUILD_FOR_HOUDINI "Build for Houdini" OFF)
 
 # Find Packages
 # --------------------------------------------------
 
-find_package(Vulkan  REQUIRED)
-find_package(OpenGL  REQUIRED)
-find_package(GLEW    REQUIRED)
-
 if (NOT BUILD_FOR_HOUDINI)
-    # Path to a OpenUSD build / installation.
-    list( APPEND CMAKE_PREFIX_PATH "~/Development/OpenUSD_Build_Debug/" )
-
     # Configure a OpenUSD installation. 
     find_package(pxr REQUIRED)
 else()
@@ -75,8 +59,11 @@ add_library(${PROJECT_NAME} SHARED
 # Include
 # --------------------------------------------------
 
-target_include_directories (${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
-target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/External/VulkanWrappers/Include)
+if (WIN32)
+    # Tell windows to chill
+    target_compile_definitions (${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX _CRT_SECURE_NO_WARNINGS)
+endif ()
+
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Include)
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/External/)
 
@@ -87,11 +74,6 @@ endif()
 
 # Link
 # --------------------------------------------------
-
-target_link_libraries (${PROJECT_NAME} ${Vulkan_LIBRARIES})
-target_link_libraries (${PROJECT_NAME} OpenGL::GL)
-target_link_libraries (${PROJECT_NAME} GLEW::glew)
-target_link_libraries (${PROJECT_NAME} VulkanWrappers)
 
 if (NOT BUILD_FOR_HOUDINI)
     # Link against OpenUSD directly. 
@@ -111,13 +93,11 @@ endif()
 # Move the library + plugin info to a location that USD checks plugins for. 
 # Note: This location should be pointed to by the $PXR_PLUGINPATH_NAME env variable. 
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION .)
-install(TARGETS VulkanWrappers  LIBRARY DESTINATION .)
-install(TARGETS MetalUtility    LIBRARY DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/Source/plugInfo.json DESTINATION libExampleHydraRenderDelegate/resources/)
 
 # Standalone Executable Test
 # --------------------------------------------------
 
 if (NOT BUILD_FOR_HOUDINI)
-    add_subdirectory(StandaloneTest/)
+    # add_subdirectory(StandaloneTest/)
 endif()

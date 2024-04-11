@@ -5,11 +5,6 @@
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
-namespace VulkanWrappers
-{
-    class Device;
-}
-
 class ExRenderDelegate final : public HdRenderDelegate
 {
 public:
@@ -57,14 +52,6 @@ public:
 
     HdRenderParam *GetRenderParam() const override;
 
-    // Utility
-    // ---------------------------
-
-    inline VulkanWrappers::Device* GetGraphicsDevice() { return m_GraphicsDevice; }
-
-    // If the delegate owns the graphics device, we will need to submit commands ourselves. 
-    inline bool RequiresManualQueueSubmit() { return m_DefaultGraphicsDevice.get() != nullptr; }
-
 private:
 
     static const TfTokenVector SUPPORTED_RPRIM_TYPES;
@@ -72,11 +59,6 @@ private:
     static const TfTokenVector SUPPORTED_BPRIM_TYPES;
 
     void _Initialize();
-
-    // Default delegate-managed device resource that is created if the application doesn't provide one.
-    std::unique_ptr<VulkanWrappers::Device> m_DefaultGraphicsDevice;
-
-    VulkanWrappers::Device* m_GraphicsDevice;
 
     HdResourceRegistrySharedPtr _resourceRegistry;
 };

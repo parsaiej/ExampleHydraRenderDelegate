@@ -2,8 +2,6 @@
 #include <ExampleDelegate/ExRenderPass.h>
 #include <ExampleDelegate/ExMesh.h>
 
-#include <VulkanWrappers/Device.h>
-
 #include <iostream>
 #include <memory>
 
@@ -43,25 +41,8 @@ ExRenderDelegate::~ExRenderDelegate()
     std::cout << "Destroying Custom RenderDelegate" << std::endl;
 }
 
-// In case 
-struct NoOpDeleter { void operator()(VulkanWrappers::Device* ptr) const {} };
-
 void ExRenderDelegate::SetDrivers(HdDriverVector const& drivers)
 {
-    for (const auto& driver : drivers)
-    {
-        if (driver->name == TfToken("CustomVulkanDevice") && driver->driver.IsHolding<VulkanWrappers::Device*>())
-        {
-            m_GraphicsDevice = driver->driver.UncheckedGet<VulkanWrappers::Device*>();
-            return;
-        }
-    }
-
-    // If no driver is passed, then create it here (no window). 
-    m_DefaultGraphicsDevice = std::make_unique<VulkanWrappers::Device>();
-
-    // And set the main device resource to the default one.
-    m_GraphicsDevice = m_DefaultGraphicsDevice.get();
 }
 
 TfTokenVector const& ExRenderDelegate::GetSupportedRprimTypes() const
