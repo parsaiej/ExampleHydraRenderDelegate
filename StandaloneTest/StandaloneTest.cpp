@@ -24,6 +24,15 @@
 // USD Hydra Scene Delegate Implementation.
 #include <pxr/usdImaging/usdImaging/delegate.h>
 
+// NRI
+
+// NRI: core & common extensions
+#include <NRI/Include/NRI.h>
+#include <NRI/Include/Extensions/NRIDeviceCreation.h>
+#include <NRI/Include/Extensions/NRIHelper.h>
+#include <NRI/Include/Extensions/NRIStreamer.h>
+#include <NRI/Include/Extensions/NRISwapChain.h>
+
 PXR_NAMESPACE_USING_DIRECTIVE
 
 // Implementation
@@ -31,6 +40,12 @@ PXR_NAMESPACE_USING_DIRECTIVE
 
 int main(int argc, char **argv, char **envp)
 { 
+    // Create render device
+
+    nri::AdapterDesc bestAdapterDesc = {};
+    uint32_t adapterDescsNum = 1;
+    nri::nriEnumerateAdapters(&bestAdapterDesc, adapterDescsNum);
+
     // Load Render Plugin
     // ---------------------
 

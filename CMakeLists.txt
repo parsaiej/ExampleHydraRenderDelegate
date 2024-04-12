@@ -14,13 +14,13 @@ set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
 if (APPLE)
     # In order for targets to properly load Vulkan libs etc. 
     list(APPEND CMAKE_INSTALL_RPATH "/usr/local/lib")
+
+    # Set RPATH for all targets in the project
+    list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
 else()
     add_compile_definitions(NOMINMAX)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
-
-# Set RPATH for all targets in the project
-list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
 
 # User Options
 # --------------------------------------------------
@@ -48,6 +48,10 @@ else()
     find_package(Houdini REQUIRED)
 endif()
 
+if (APPLE)
+    find_package(Vulkan REQUIRED)
+endif()
+
 # Configure local dependencies
 # --------------------------------------------------
 
@@ -66,13 +70,16 @@ add_library(${PROJECT_NAME} SHARED
     "Source/ExRenderBuffer.cpp"
 )
 
-# Include
+# Define
 # --------------------------------------------------
 
 if (WIN32)
     # Tell windows to chill
     target_compile_definitions (${PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX _CRT_SECURE_NO_WARNINGS)
 endif ()
+
+# Include
+# --------------------------------------------------
 
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/Source/Include)
 target_include_directories (${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/External/)
@@ -97,7 +104,9 @@ else()
     target_link_libraries (${PROJECT_NAME} Houdini)
 endif()
 
-# Install Config
+target_link_libraries (${PROJECT_NAME} NRI)
+
+# Install
 # --------------------------------------------------
 
 # Plugin install path
