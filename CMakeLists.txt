@@ -55,7 +55,9 @@ endif()
 # Configure local dependencies
 # --------------------------------------------------
 
+add_subdirectory(External/glfw)
 add_subdirectory(External/NRI)
+add_subdirectory(External/MetalUtility)
 
 # Library
 # --------------------------------------------------
