@@ -88,7 +88,6 @@ struct Frame
 static NRIInterface                    NRI;
 static nri::AdapterDesc                m_Adapter;
 static nri::Device*                    m_Device;
-static nri::Streamer*                  m_Streamer;
 static nri::MemoryAllocatorInterface   m_MemoryAllocator;
 static nri::CommandQueue*              m_GraphicsQueue;
 static nri::Fence*                     m_FrameFence;
@@ -104,7 +103,7 @@ void InitializeDevice()
     uint32_t adapterDescsNum = 1;
     ABORT_ON_FAIL(nri::nriEnumerateAdapters(&m_Adapter, adapterDescsNum));
 
-#ifdef DEBUG
+#if 1
     bool validationLayers = true;
 #else
     bool validationLayers = false;
@@ -130,13 +129,6 @@ void InitializeDevice()
     ABORT_ON_FAIL( nri::nriGetInterface(*m_Device, NRI_INTERFACE(nri::HelperInterface), (nri::HelperInterface*)&NRI) );
     ABORT_ON_FAIL( nri::nriGetInterface(*m_Device, NRI_INTERFACE(nri::StreamerInterface), (nri::StreamerInterface*)&NRI) );
     ABORT_ON_FAIL( nri::nriGetInterface(*m_Device, NRI_INTERFACE(nri::SwapChainInterface), (nri::SwapChainInterface*)&NRI) );
-
-    // Create streamer
-    nri::StreamerDesc streamerDesc = {};
-    streamerDesc.dynamicBufferMemoryLocation = nri::MemoryLocation::HOST_UPLOAD;
-    streamerDesc.dynamicBufferUsageBits      = nri::BufferUsageBits::VERTEX_BUFFER | nri::BufferUsageBits::INDEX_BUFFER;
-    streamerDesc.frameInFlightNum            = NUM_FRAME_IN_FLIGHT;
-    ABORT_ON_FAIL(NRI.CreateStreamer(*m_Device, streamerDesc, m_Streamer));
 
     // Command queue
     ABORT_ON_FAIL(NRI.GetCommandQueue(*m_Device, nri::CommandQueueType::GRAPHICS, m_GraphicsQueue));
@@ -201,7 +193,6 @@ int main()
 #endif
 
     InitializeDevice();
-
 
     for (uint32_t frameIndex = 0; frameIndex < UINT_MAX; frameIndex++)
     {   
@@ -301,85 +292,3 @@ int main()
     glfwDestroyWindow(m_GLFWWindow);
     glfwTerminate();
 }
-
-
-/*
-int main(int argc, char **argv, char **envp)
-{ 
-    // Create render device
-
-    nri::AdapterDesc bestAdapterDesc = {};
-    uint32_t adapterDescsNum = 1;
-    nri::nriEnumerateAdapters(&bestAdapterDesc, adapterDescsNum);
-
-    // Load Render Plugin
-    // ---------------------
-
-    // NOTE: For GetRendererPlugin() to successfully find the token, ensure the PXR_PLUGINPATH_NAME env variable is set.
-    // NOTE: Technically since we are linked with the ExampleDelegate we can just directly instantiate one here but we don't for demo purpose.
-    HdRendererPlugin *rendererPlugin = HdRendererPluginRegistry::GetInstance().GetRendererPlugin(TfToken("RendererPlugin"));
-    TF_VERIFY(rendererPlugin != nullptr);
-
-    // Create render delegate instance from the plugin. 
-    // ---------------------
-
-    HdRenderDelegate *renderDelegate = rendererPlugin->CreateRenderDelegate();
-    TF_VERIFY(renderDelegate != nullptr);
-
-    // Wrap our vulkan device implementation in an HDDriver
-    // We could use the OpenUSD Hydra "HGI" here but for learning purposes I would rather use a from-scratch implementation.
-    // ---------------------
-
-    HdDriver customDriver{TfToken("CustomVulkanDevice"), VtValue(nullptr)};
-    
-    // Create render index from the delegate. 
-    // ---------------------
-
-    HdRenderIndex *renderIndex = HdRenderIndex::New(renderDelegate, { &customDriver });
-    TF_VERIFY(renderIndex != nullptr);
-
-    // Construct a scene delegate from the stock OpenUSD scene delegate implementation.
-    // ---------------------
-
-    UsdImagingDelegate *sceneDelegate = new UsdImagingDelegate(renderIndex, SdfPath::AbsoluteRootPath());
-    TF_VERIFY(sceneDelegate != nullptr);
-
-    // Load a USD Stage.
-    // ---------------------
-
-    UsdStageRefPtr usdStage = pxr::UsdStage::Open(std::string(getenv("HOME")) + "/Downloads/Kitchen_set/Kitchen_set.usd");
-    TF_VERIFY(usdStage != nullptr);
-
-    // Pipe the USD stage into the scene delegate (will create render primitives in the render delegate).
-    // ---------------------
-
-    sceneDelegate->Populate(usdStage->GetPseudoRoot());
-
-    // Create the render tasks.
-    // ---------------------
-
-    HdxTaskController taskController(renderIndex, SdfPath("/taskController"));
-    {
-        auto params = HdxRenderTaskParams();
-        {
-            params.viewport = GfVec4i(0, 0, 800, 600);
-        }
-
-        // The "Task Controller" will automatically configure an HdxRenderTask
-        // (which will create and invoke our delegate's renderpass).
-        taskController.SetRenderParams(params);
-        taskController.SetRenderViewport({ 0, 0, 800, 600 });
-    }
-
-    // Initialize the Hydra engine. 
-    // ---------------------
-
-    HdEngine engine;
-
-    // Render-loop
-    // ---------------------
-
-
-    return 0;
-}
-*/
