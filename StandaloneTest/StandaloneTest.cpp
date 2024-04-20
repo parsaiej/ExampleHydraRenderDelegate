@@ -23,6 +23,9 @@
 #include <pxr/imaging/hd/rendererPluginRegistry.h>
 #include <pxr/imaging/hd/unitTestDelegate.h>
 
+#include <pxr/imaging/hgi/hgi.h>
+#include <pxr/imaging/hgi/tokens.h>
+
 // HDX (Hydra Utilities)
 #include <pxr/imaging/hdx/renderTask.h>
 #include <pxr/imaging/hdx/taskController.h>
@@ -39,18 +42,12 @@ using namespace VulkanWrappers;
 
 int main(int argc, char **argv, char **envp)
 { 
-    // Create window. 
-    Window window("Standalone Vulkan Hydra Executable", 800, 600);
-
-    // Initialize graphics device usage with the window. 
-    Device device(&window);
-
     // Load Render Plugin
     // ---------------------
 
     // NOTE: For GetRendererPlugin() to successfully find the token, ensure the PXR_PLUGINPATH_NAME env variable is set.
     // NOTE: Technically since we are linked with the ExampleDelegate we can just directly instantiate one here but we don't for demo purpose.
-    HdRendererPlugin *rendererPlugin = HdRendererPluginRegistry::GetInstance().GetRendererPlugin(TfToken("RendererPlugin"));
+    HdRendererPlugin *rendererPlugin = HdRendererPluginRegistry::GetInstance().GetRendererPlugin(TfToken("HdStormRendererPlugin"));
     TF_VERIFY(rendererPlugin != nullptr);
 
     // Create render delegate instance from the plugin. 
@@ -63,12 +60,15 @@ int main(int argc, char **argv, char **envp)
     // We could use the OpenUSD Hydra "HGI" here but for learning purposes I would rather use a from-scratch implementation.
     // ---------------------
 
-    HdDriver customDriver{TfToken("CustomVulkanDevice"), VtValue(&device)};
+    // HdDriver customDriver{TfToken("CustomVulkanDevice"), VtValue(&device)};
+
+    auto hgi = Hgi::CreatePlatformDefaultHgi();
+    HdDriver hgiDriver{ HgiTokens->renderDriver, VtValue(hgi.get())};
     
     // Create render index from the delegate. 
     // ---------------------
 
-    HdRenderIndex *renderIndex = HdRenderIndex::New(renderDelegate, { &customDriver });
+    HdRenderIndex *renderIndex = HdRenderIndex::New(renderDelegate, { &hgiDriver } );
     TF_VERIFY(renderIndex != nullptr);
 
     // Construct a scene delegate from the stock OpenUSD scene delegate implementation.
@@ -80,7 +80,7 @@ int main(int argc, char **argv, char **envp)
     // Load a USD Stage.
     // ---------------------
 
-    UsdStageRefPtr usdStage = pxr::UsdStage::Open(std::string(getenv("HOME")) + "/Downloads/Kitchen_set/Kitchen_set.usd");
+    UsdStageRefPtr usdStage = pxr::UsdStage::Open(std::string(getenv("HOME")) + "/Downloads/barrels/materialx_test.usd");
     TF_VERIFY(usdStage != nullptr);
 
     // Pipe the USD stage into the scene delegate (will create render primitives in the render delegate).
@@ -102,6 +102,9 @@ int main(int argc, char **argv, char **envp)
         // (which will create and invoke our delegate's renderpass).
         taskController.SetRenderParams(params);
         taskController.SetRenderViewport({ 0, 0, 800, 600 });
+        taskController.SetSelectionColor({ 1, 0, 0, 0});
+        taskController.SetEnableSelection(false);
+        taskController.SetEnablePresentation(true);
     }
 
     // Initialize the Hydra engine. 
@@ -112,23 +115,9 @@ int main(int argc, char **argv, char **envp)
     // Render-loop
     // ---------------------
 
-    // Handle to current frame to write commands to. 
-    Frame frame;
-
-    while (window.NextFrame(&device, &frame))
-    {
-        // Forward the current backbuffer and commandbuffer to the delegate. 
-        // This feels quite hacky, open to suggestions. 
-        // There might be a simpler way to manage this by writing my own HdTask, but
-        // it would require sacrificing the simplicity that HdxTaskController offers.
-        renderDelegate->SetRenderSetting(TfToken("CurrentFrame"), VtValue(&frame));
-
-        // Invoke Hydra!
-        auto renderTasks = taskController.GetRenderingTasks();
-        engine.Execute(renderIndex, &renderTasks);
-
-        window.SubmitFrame(&device, &frame);
-    }
-
+    // Invoke Hydra!
+    auto renderTasks = taskController.GetRenderingTasks();
+    engine.Execute(renderIndex, &renderTasks);
+ 
     return 0;
 }
