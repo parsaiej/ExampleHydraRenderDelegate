@@ -8,6 +8,8 @@
 #include <memory>
 #include <unordered_map>
 
+#define TBB_USE_DEBUG 1
+
 #ifdef __APPLE__
     // MacOS fix for bug inside USD. 
     #define unary_function __unary_function

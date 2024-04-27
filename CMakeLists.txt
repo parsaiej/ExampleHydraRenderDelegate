@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/External/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+
 set(PROJECT_NAME ExampleHydraRenderDelegate)
 project(${PROJECT_NAME})
 
@@ -114,7 +116,7 @@ endif()
 # --------------------------------------------------
 
 # Plugin install path
-set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/Development/custom_usd_plugins")
+set(CMAKE_INSTALL_PREFIX "C:/Development/custom_usd_plugins")
 
 # Move the library + plugin info to a location that USD checks plugins for. 
 # Note: This location should be pointed to by the $PXR_PLUGINPATH_NAME env variable. 
