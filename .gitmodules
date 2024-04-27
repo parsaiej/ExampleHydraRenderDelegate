@@ -4,6 +4,3 @@
 [submodule "External/stb"]
 	path = External/stb
 	url = git@github.com:nothings/stb.git
-[submodule "External/vcpkg"]
-	path = External/vcpkg
-	url = git@github.com:microsoft/vcpkg.git
