@@ -13,7 +13,7 @@
             "program": "${workspaceFolder}/build/StandaloneTest/StandaloneTest",
             "cwd": "${workspaceFolder}/build/StandaloneTest/",
             "env": {
-                "PXR_PLUGINPATH_NAME": "/Users/johnparsaie/Development/custom_usd_plugins"
+                "PXR_PLUGINPATH_NAME": "C:/Development/custom_usd_plugins"
             }
         },
 
