@@ -1,0 +1,7 @@
+{
+    "dependencies": 
+    [
+        { "name": "glfw3" },
+        { "name": "glew"  }
+    ]
+}

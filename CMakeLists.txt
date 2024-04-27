@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/External/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
+set(VCPKG_TARGET_TRIPLET "x64-windows-static")
+set(CMAKE_TOOLCHAIN_FILE "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain file")
 
 set(PROJECT_NAME ExampleHydraRenderDelegate)
 project(${PROJECT_NAME})
@@ -33,17 +34,6 @@ list(APPEND CMAKE_INSTALL_RPATH "@loader_path")
 # otherwise there will be issues due to loading a plugin that was made with a different version.
 option(BUILD_FOR_HOUDINI "Build for Houdini" OFF)
 
-# Configure misc. packages
-# --------------------------------------------------
-
-# Enable a define in the wrappers to enable Vulkan validation layers. 
-add_definitions(-DENABLE_VALIDATION_LAYERS)
-
-add_subdirectory(External/VulkanWrappers)
-
-# Find Packages
-# --------------------------------------------------
-
 find_package(Vulkan  REQUIRED)
 find_package(OpenGL  REQUIRED)
 find_package(GLEW    REQUIRED)
@@ -65,6 +55,17 @@ else()
     # Info: https://www.sidefx.com/docs/hdk/_h_d_k__intro__compiling.html
     find_package(Houdini REQUIRED)
 endif()
+
+# Configure misc. packages
+# --------------------------------------------------
+
+# Enable a define in the wrappers to enable Vulkan validation layers. 
+add_definitions(-DENABLE_VALIDATION_LAYERS)
+
+add_subdirectory(External/VulkanWrappers)
+
+# Find Packages
+# --------------------------------------------------
 
 # Library
 # --------------------------------------------------
@@ -97,7 +98,7 @@ endif()
 
 target_link_libraries (${PROJECT_NAME} ${Vulkan_LIBRARIES})
 target_link_libraries (${PROJECT_NAME} OpenGL::GL)
-target_link_libraries (${PROJECT_NAME} GLEW::glew)
+target_link_libraries (${PROJECT_NAME} GLEW::GLEW)
 target_link_libraries (${PROJECT_NAME} VulkanWrappers)
 
 if (NOT BUILD_FOR_HOUDINI)

@@ -87,6 +87,7 @@ ExRenderPass::ExRenderPass(HdRenderIndex *index, HdRprimCollection const &collec
     auto pluginBase = PlugRegistry::GetInstance().GetPluginWithName("hdExample");
     TF_VERIFY(pluginBase != nullptr);
 
+    /*
     s_Shaders = 
     {
         { ShaderID::MESH_VS,  Shader(pluginBase->FindPluginResource("shaders/TriangleVert.spv").c_str(), VK_SHADER_STAGE_VERTEX_BIT)   },
@@ -99,6 +100,7 @@ ExRenderPass::ExRenderPass(HdRenderIndex *index, HdRprimCollection const &collec
     // The internal command should be secondary since there already exist a primary one to be used for application-managed queue submission.
     if (m_Owner->RequiresManualQueueSubmit())
         device->CreateCommandBuffer(&s_InternalCmd);
+    */
 }
 
 ExRenderPass::~ExRenderPass() 
@@ -238,7 +240,7 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
     colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.clearValue.color = { 0, 0, 0, 1 };
+    colorAttachment.clearValue.color = { 1, 0, 0, 1 };
 
 
     VkRenderingInfoKHR renderInfo = {};
@@ -252,8 +254,13 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
 
 
     // Write commands for this frame. 
+#if __APPLE__
     Device::vkCmdBeginRenderingKHR(cmd, &renderInfo);
+#else
+    vkCmdBeginRendering(cmd, &renderInfo);
+#endif
 
+    /*
     Shader::Bind(cmd, s_Shaders[ShaderID::MESH_VS]);
     Shader::Bind(cmd, s_Shaders[ShaderID::UNLIT_PS]);
 
@@ -278,8 +285,13 @@ void ExRenderPass::_Execute(HdRenderPassStateSharedPtr const& renderPassState, T
     Device::vkCmdSetScissorWithCountEXT(cmd, 1u,  &currentScissor);
 
     vkCmdDraw(cmd, 3u, 1u, 0u, 0u);
+    */
 
+#if __APPLE__
     Device::vkCmdEndRenderingKHR(cmd);
+#else
+    vkCmdEndRendering(cmd);
+#endif
 
     // Conclude internal command buffer recording.
     if (m_Owner->RequiresManualQueueSubmit())

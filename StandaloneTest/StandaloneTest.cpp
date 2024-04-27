@@ -82,7 +82,7 @@ int main(int argc, char **argv, char **envp)
     // Load a USD Stage.
     // ---------------------
 
-    UsdStageRefPtr usdStage = pxr::UsdStage::Open(std::string(getenv("HOME")) + "/Downloads/Kitchen_set/Kitchen_set.usd");
+    UsdStageRefPtr usdStage = pxr::UsdStage::Open("C:/Users/parsa/OneDrive/Desktop/pig_head.usd");
     TF_VERIFY(usdStage != nullptr);
 
     // Pipe the USD stage into the scene delegate (will create render primitives in the render delegate).
